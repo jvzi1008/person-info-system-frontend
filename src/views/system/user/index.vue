@@ -327,6 +327,7 @@ export default {
     }
   },
   created() {
+    this.applyRouteQuery()
     this.getList()
     this.getDeptTree()
     this.getConfigKey("sys.user.initPassword").then(response => {
@@ -334,6 +335,19 @@ export default {
     })
   },
   methods: {
+    /** 从路由 query 读取预设筛选（如「用户审核」入口的 auditStatus=0） */
+    applyRouteQuery() {
+      const q = this.$route && this.$route.query
+      if (!q) {
+        return
+      }
+      if (q.auditStatus !== undefined && q.auditStatus !== null && q.auditStatus !== '') {
+        this.queryParams.auditStatus = String(q.auditStatus)
+      }
+      if (q.userType) {
+        this.queryParams.userType = String(q.userType)
+      }
+    },
     /** 查询用户列表 */
     getList() {
       this.loading = true
