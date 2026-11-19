@@ -161,22 +161,16 @@ export default {
           Cookies.remove("password")
           Cookies.remove('rememberMe')
         }
+        // 只做登录；GetInfo / GenerateRoutes / 角色跳转统一交给路由守卫处理，
+        // 否则守卫会因 roles 已存在而跳过动态路由注册（导致侧边栏缺菜单）
         this.$store.dispatch('Login', {
           username: this.loginForm.username.trim(),
           password: this.loginForm.password,
           code: this.loginForm.code,
           uuid: this.loginForm.uuid
         }).then(() => {
-          return this.$store.dispatch('GetInfo')
-        }).then(() => {
           this.loading = false
-          const roles = this.$store.getters.roles || []
-          if (roles.includes('admin')) {
-            const target = this.redirect && this.redirect.indexOf('/ext') !== 0 ? this.redirect : '/'
-            this.$router.push({ path: target }).catch(() => {})
-          } else {
-            this.$router.replace('/ext/compare').catch(() => {})
-          }
+          this.$router.push({ path: this.redirect || '/' }).catch(() => {})
         }).catch(() => {
           this.loading = false
           if (this.captchaEnabled) {
@@ -264,8 +258,9 @@ export default {
   cursor: pointer;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
-.register-btn {
+.login-form .register-btn {
+  display: block;
   width: 100%;
-  margin-top: 10px;
+  margin: 10px 0 0 0;
 }
 </style>
