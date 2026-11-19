@@ -127,6 +127,15 @@ export function updateAuthRole(data) {
   })
 }
 
+// 审核注册用户（1通过 2驳回）
+export function auditUser(data) {
+  return request({
+    url: '/system/user/audit',
+    method: 'put',
+    data: data
+  })
+}
+
 // 查询部门下拉树结构
 export function deptTreeSelect() {
   return request({

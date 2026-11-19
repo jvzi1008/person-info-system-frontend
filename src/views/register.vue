@@ -3,7 +3,7 @@
     <el-form ref="registerForm" :model="registerForm" :rules="registerRules" class="register-form">
       <h3 class="title">{{title}}</h3>
       <el-form-item prop="username">
-        <el-input v-model="registerForm.username" type="text" auto-complete="off" placeholder="账号">
+        <el-input v-model="registerForm.username" type="text" auto-complete="off" placeholder="邮箱">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
         </el-input>
       </el-form-item>
@@ -93,8 +93,9 @@ export default {
     registerRules() {
       return {
         username: [
-          { required: true, trigger: "blur", message: "请输入您的账号" },
-          { min: 2, max: 20, message: '用户账号长度必须介于 2 和 20 之间', trigger: 'blur' }
+          { required: true, trigger: "blur", message: "请输入邮箱" },
+          { type: "email", message: "邮箱格式不正确", trigger: ["blur", "change"] },
+          { max: 64, message: "邮箱长度不能超过64位", trigger: "blur" }
         ],
         confirmPassword: [
           { required: true, message: "请再次输入您的密码", trigger: "blur" },
@@ -131,7 +132,7 @@ export default {
           this.loading = true
           register(this.registerForm).then(() => {
             const username = this.registerForm.username
-            this.$alert("<font color='red'>恭喜你，您的账号 " + username + " 注册成功！</font>", '系统提示', {
+            this.$alert("<font color='red'>注册成功，账号 " + username + " 需等待管理员审核通过后才能登录。</font>", '系统提示', {
               dangerouslyUseHTMLString: true,
               type: 'success'
             }).then(() => {

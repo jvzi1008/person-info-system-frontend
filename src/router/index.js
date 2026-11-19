@@ -93,6 +93,36 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    path: '/ext/login',
+    redirect: to => ({ path: '/login', query: { redirect: to.query.redirect || '/ext/compare' } }),
+    hidden: true
+  },
+  {
+    path: '/ext/register',
+    redirect: '/register',
+    hidden: true
+  },
+  {
+    path: '/ext',
+    component: () => import('@/layout/ExtLayout'),
+    redirect: '/ext/compare',
+    hidden: true,
+    children: [
+      {
+        path: 'compare',
+        component: () => import('@/views/ext/compare/index'),
+        name: 'ExtCompare',
+        meta: { title: '人员信息比对' }
+      },
+      {
+        path: 'ips',
+        component: () => import('@/views/ext/ips/index'),
+        name: 'ExtIps',
+        meta: { title: '我的IP授权' }
+      }
+    ]
   }
 ]
 

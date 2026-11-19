@@ -15,6 +15,19 @@
               <el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
             </el-select>
           </el-form-item>
+          <el-form-item label="用户类型" prop="userType">
+            <el-select v-model="queryParams.userType" placeholder="全部" clearable style="width: 160px">
+              <el-option label="系统用户" value="00" />
+              <el-option label="普通用户" value="01" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="审核状态" prop="auditStatus">
+            <el-select v-model="queryParams.auditStatus" placeholder="全部" clearable style="width: 160px">
+              <el-option label="待审核" value="0" />
+              <el-option label="已通过" value="1" />
+              <el-option label="已驳回" value="2" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="创建时间">
             <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
           </el-form-item>
@@ -59,6 +72,20 @@
               <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
             </template>
           </el-table-column>
+          <el-table-column label="用户类型" align="center" key="userType" v-if="columns.userType.visible" width="100">
+            <template slot-scope="scope">
+              <el-tag :type="scope.row.userType === '01' ? 'warning' : 'info'" size="small">
+                {{ scope.row.userType === '01' ? '普通用户' : '系统用户' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="审核状态" align="center" key="auditStatus" v-if="columns.auditStatus.visible" width="100">
+            <template slot-scope="scope">
+              <el-tag v-if="scope.row.auditStatus === '0'" type="warning" size="small">待审核</el-tag>
+              <el-tag v-else-if="scope.row.auditStatus === '2'" type="danger" size="small">已驳回</el-tag>
+              <el-tag v-else type="success" size="small">已通过</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns.createTime.visible" width="160">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -66,6 +93,7 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="160" class-name="small-padding fixed-width">
             <template slot-scope="scope" v-if="scope.row.userId !== 1">
+              <el-button v-if="scope.row.auditStatus === '0'" size="mini" type="text" icon="el-icon-s-check" @click="handleAudit(scope.row)" v-hasPermi="['system:user:audit']">审核</el-button>
               <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">修改</el-button>
               <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['system:user:remove']">删除</el-button>
               <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)" v-hasPermi="['system:user:resetPwd', 'system:user:edit']">
@@ -168,6 +196,25 @@
     </el-dialog>
 
     <!-- 用户详情抽屉 -->
+    <el-dialog title="用户审核" :visible.sync="auditOpen" width="480px" append-to-body>
+      <el-form ref="auditForm" :model="auditForm" label-width="90px">
+        <el-form-item label="账号">{{ auditForm.userName }}</el-form-item>
+        <el-form-item label="审核结果">
+          <el-radio-group v-model="auditForm.auditStatus">
+            <el-radio label="1">通过</el-radio>
+            <el-radio label="2">驳回</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="审核意见">
+          <el-input v-model="auditForm.auditRemark" type="textarea" :rows="3" placeholder="驳回时必须填写原因" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="auditOpen = false">取 消</el-button>
+        <el-button type="primary" @click="submitAudit">确 定</el-button>
+      </div>
+    </el-dialog>
+
     <user-view-drawer ref="userViewRef" />
     <!-- 用户导入对话框 -->
     <excel-import-dialog ref="importUserRef" title="用户导入" action="/system/user/importData" template-action="/system/user/importTemplate" template-file-name="user_template" update-support-label="是否更新已经存在的用户数据" @success="getList" />
@@ -175,7 +222,7 @@
 </template>
 
 <script>
-import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus, deptTreeSelect } from "@/api/system/user"
+import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus, deptTreeSelect, auditUser } from "@/api/system/user"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 import TreePanel from "@/components/TreePanel"
@@ -229,6 +276,8 @@ export default {
         userName: undefined,
         phonenumber: undefined,
         status: undefined,
+        userType: undefined,
+        auditStatus: undefined,
         deptId: undefined
       },
       // 列信息
@@ -239,7 +288,17 @@ export default {
         deptName: { label: '部门', visible: true },
         phonenumber: { label: '手机号码', visible: true },
         status: { label: '状态', visible: true },
+        userType: { label: '用户类型', visible: true },
+        auditStatus: { label: '审核状态', visible: true },
         createTime: { label: '创建时间', visible: true }
+      },
+      // 审核弹窗
+      auditOpen: false,
+      auditForm: {
+        userId: undefined,
+        userName: undefined,
+        auditStatus: '1',
+        auditRemark: ''
       },
       // 表单校验
       rules: {
@@ -412,6 +471,32 @@ export default {
           this.$modal.msgSuccess("修改成功，新密码是：" + value)
         })
       }).catch(() => {})
+    },
+    /** 打开审核弹窗 */
+    handleAudit(row) {
+      this.auditForm = {
+        userId: row.userId,
+        userName: row.userName,
+        auditStatus: '1',
+        auditRemark: ''
+      }
+      this.auditOpen = true
+    },
+    /** 提交审核 */
+    submitAudit() {
+      if (this.auditForm.auditStatus === '2' && !this.auditForm.auditRemark) {
+        this.$modal.msgWarning('驳回必须填写原因')
+        return
+      }
+      auditUser({
+        userId: this.auditForm.userId,
+        auditStatus: this.auditForm.auditStatus,
+        auditRemark: this.auditForm.auditRemark
+      }).then(() => {
+        this.$modal.msgSuccess('审核完成')
+        this.auditOpen = false
+        this.getList()
+      })
     },
     /** 分配角色操作 */
     handleAuthRole(row) {

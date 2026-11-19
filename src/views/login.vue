@@ -1,5 +1,8 @@
 <template>
   <div class="login">
+    <div class="home-entry">
+      <a @click.prevent="backHome">返回系统首页</a>
+    </div>
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">{{title}}</h3>
       <el-form-item prop="username">
@@ -48,10 +51,14 @@
         >
           <span v-if="!loading">登 录</span>
           <span v-else>登 录 中...</span>
+        </el-button>
+        <el-button
+          size="medium"
+          class="register-btn"
+          @click.native.prevent="goRegister"
+        >
+          注 册
         </el-button>
-        <div style="float: right;" v-if="register">
-          <router-link class="link-type" :to="'/register'">立即注册</router-link>
-        </div>
       </el-form-item>
     </el-form>
     <!--  底部  -->
@@ -66,6 +73,7 @@ import { getCodeImg } from "@/api/login"
 import Cookies from "js-cookie"
 import { encrypt, decrypt } from '@/utils/jsencrypt'
 import defaultSettings from '@/settings'
+import { removeToken } from '@/utils/auth'
 
 export default {
   name: "Login",
@@ -75,15 +83,15 @@ export default {
       footerContent: defaultSettings.footerContent,
       codeUrl: "",
       loginForm: {
-        username: "admin",
-        password: "admin123",
+        username: "",
+        password: "",
         rememberMe: false,
         code: "",
         uuid: ""
       },
       loginRules: {
         username: [
-          { required: true, trigger: "blur", message: "请输入您的账号" }
+          { required: true, trigger: "blur", message: "请输入邮箱账号" }
         ],
         password: [
           { required: true, trigger: "blur", message: "请输入您的密码" }
@@ -91,10 +99,7 @@ export default {
         code: [{ required: true, trigger: "change", message: "请输入验证码" }]
       },
       loading: false,
-      // 验证码开关
       captchaEnabled: true,
-      // 注册开关
-      register: false,
       redirect: undefined
     }
   },
@@ -124,34 +129,60 @@ export default {
       const username = Cookies.get("username")
       const password = Cookies.get("password")
       const rememberMe = Cookies.get('rememberMe')
-      this.loginForm = {
-        username: username === undefined ? this.loginForm.username : username,
-        password: password === undefined ? this.loginForm.password : decrypt(password),
-        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
-      }
+      this.loginForm.username = username === undefined ? this.loginForm.username : username
+      this.loginForm.password = password === undefined ? this.loginForm.password : decrypt(password)
+      this.loginForm.rememberMe = rememberMe === undefined ? false : Boolean(rememberMe)
+    },
+    clearAuth() {
+      removeToken()
+      this.$store.commit('SET_TOKEN', '')
+      this.$store.commit('SET_ROLES', [])
+      this.$store.commit('SET_PERMISSIONS', [])
+    },
+    backHome() {
+      this.clearAuth()
+      this.$router.replace('/')
+    },
+    goRegister() {
+      this.$router.push('/register')
     },
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
-        if (valid) {
-          this.loading = true
-          if (this.loginForm.rememberMe) {
-            Cookies.set("username", this.loginForm.username, { expires: 30 })
-            Cookies.set("password", encrypt(this.loginForm.password), { expires: 30 })
-            Cookies.set('rememberMe', this.loginForm.rememberMe, { expires: 30 })
-          } else {
-            Cookies.remove("username")
-            Cookies.remove("password")
-            Cookies.remove('rememberMe')
-          }
-          this.$store.dispatch("Login", this.loginForm).then(() => {
-            this.$router.push({ path: this.redirect || "/" }).catch(()=>{})
-          }).catch(() => {
-            this.loading = false
-            if (this.captchaEnabled) {
-              this.getCode()
-            }
-          })
+        if (!valid) {
+          return
         }
+        this.loading = true
+        if (this.loginForm.rememberMe) {
+          Cookies.set("username", this.loginForm.username, { expires: 30 })
+          Cookies.set("password", encrypt(this.loginForm.password), { expires: 30 })
+          Cookies.set('rememberMe', this.loginForm.rememberMe, { expires: 30 })
+        } else {
+          Cookies.remove("username")
+          Cookies.remove("password")
+          Cookies.remove('rememberMe')
+        }
+        this.$store.dispatch('Login', {
+          username: this.loginForm.username.trim(),
+          password: this.loginForm.password,
+          code: this.loginForm.code,
+          uuid: this.loginForm.uuid
+        }).then(() => {
+          return this.$store.dispatch('GetInfo')
+        }).then(() => {
+          this.loading = false
+          const roles = this.$store.getters.roles || []
+          if (roles.includes('admin')) {
+            const target = this.redirect && this.redirect.indexOf('/ext') !== 0 ? this.redirect : '/'
+            this.$router.push({ path: target }).catch(() => {})
+          } else {
+            this.$router.replace('/ext/compare').catch(() => {})
+          }
+        }).catch(() => {
+          this.loading = false
+          if (this.captchaEnabled) {
+            this.getCode()
+          }
+        })
       })
     }
   }
@@ -219,5 +250,22 @@ export default {
 }
 .login-code-img {
   height: 38px;
+}
+.home-entry {
+  position: fixed;
+  top: 22px;
+  right: 28px;
+  z-index: 2;
+}
+.home-entry a {
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.register-btn {
+  width: 100%;
+  margin-top: 10px;
 }
 </style>
