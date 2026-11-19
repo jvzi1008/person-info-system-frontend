@@ -5,6 +5,7 @@
       <nav class="nav">
         <router-link to="/ext/compare">人员信息比对</router-link>
         <router-link to="/ext/ips">我的IP</router-link>
+        <router-link to="/ext/loginLog">登录日志</router-link>
       </nav>
       <div class="user-area">
         <span class="user-name">{{ userName }}</span>

@@ -121,6 +121,12 @@ export const constantRoutes = [
         component: () => import('@/views/ext/ips/index'),
         name: 'ExtIps',
         meta: { title: '我的IP授权' }
+      },
+      {
+        path: 'loginLog',
+        component: () => import('@/views/ext/loginLog/index'),
+        name: 'ExtLoginLog',
+        meta: { title: '我的登录日志' }
       }
     ]
   }
