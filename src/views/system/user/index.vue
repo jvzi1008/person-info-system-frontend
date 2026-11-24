@@ -163,6 +163,15 @@
                 <el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
               </el-radio-group>
             </el-form-item>
+            <el-form-item label="用户类型">
+              <el-radio-group v-model="form.userType">
+                <el-radio label="00">系统用户</el-radio>
+                <el-radio label="01">普通用户</el-radio>
+              </el-radio-group>
+              <div style="font-size:12px;color:#909399;line-height:1.4;margin-top:4px;">
+                普通用户走外部界面，仅能比对、管理自己的 IP 与登录日志
+              </div>
+            </el-form-item>
           </el-col>
         </el-row>
         <el-row>
@@ -409,6 +418,7 @@ export default {
         email: undefined,
         sex: undefined,
         status: "0",
+        userType: "00",
         remark: undefined,
         postIds: [],
         roleIds: []
