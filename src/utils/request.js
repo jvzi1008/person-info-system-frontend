@@ -111,6 +111,12 @@ service.interceptors.response.use(res => {
 error => {
   console.log('err' + error)
   let { message } = error
+  // 后端返回的 403（如「当前IP未授权」）优先显示业务提示，而不是「系统接口403异常」
+  const resp = error.response || {}
+  if (resp.status === 403 && resp.data && resp.data.msg) {
+    Message({ message: resp.data.msg, type: 'error', duration: 5 * 1000 })
+    return Promise.reject(error)
+  }
   if (message == "Network Error") {
     message = "后端接口连接异常"
   } else if (message.includes("timeout")) {

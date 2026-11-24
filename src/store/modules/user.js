@@ -15,7 +15,8 @@ const user = {
     nickName: '',
     avatar: '',
     roles: [],
-    permissions: []
+    permissions: [],
+    userType: ''
   },
 
   mutations: {
@@ -39,6 +40,9 @@ const user = {
     },
     SET_PERMISSIONS: (state, permissions) => {
       state.permissions = permissions
+    },
+    SET_USER_TYPE: (state, userType) => {
+      state.userType = userType
     }
   },
 
@@ -77,6 +81,7 @@ const user = {
             commit('SET_ROLES', ['ROLE_DEFAULT'])
           }
           commit('SET_ID', user.userId)
+          commit('SET_USER_TYPE', user.userType)
           commit('SET_NAME', user.userName)
           commit('SET_NICK_NAME', user.nickName)
           commit('SET_AVATAR', avatar)

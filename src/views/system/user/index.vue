@@ -17,8 +17,7 @@
           </el-form-item>
           <el-form-item label="用户类型" prop="userType">
             <el-select v-model="queryParams.userType" placeholder="全部" clearable style="width: 160px">
-              <el-option label="系统用户" value="00" />
-              <el-option label="普通用户" value="01" />
+              <el-option v-for="dict in dict.type.sys_user_type" :key="dict.value" :label="dict.label" :value="dict.value" />
             </el-select>
           </el-form-item>
           <el-form-item label="审核状态" prop="auditStatus">
@@ -75,7 +74,7 @@
           <el-table-column label="用户类型" align="center" key="userType" v-if="columns.userType.visible" width="100">
             <template slot-scope="scope">
               <el-tag :type="scope.row.userType === '01' ? 'warning' : 'info'" size="small">
-                {{ scope.row.userType === '01' ? '普通用户' : '系统用户' }}
+                {{ dictLabel('sys_user_type', scope.row.userType) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -242,7 +241,7 @@ import passwordRule from "@/utils/passwordRule"
 export default {
   name: "User",
   mixins: [passwordRule],
-  dicts: ['sys_normal_disable', 'sys_user_sex'],
+  dicts: ['sys_normal_disable', 'sys_user_sex', 'sys_user_type'],
   components: { Treeselect, TreePanel, ExcelImportDialog, UserViewDrawer },
   data() {
     return {
@@ -365,6 +364,12 @@ export default {
         this.total = response.total
         this.loading = false
       })
+    },
+    /** 字典翻译 */
+    dictLabel(type, value) {
+      const list = (this.dict && this.dict.type && this.dict.type[type]) || []
+      const item = list.find(d => d.value === value)
+      return item ? item.label : value
     },
     /** 查询部门下拉树结构 */
     getDeptTree() {

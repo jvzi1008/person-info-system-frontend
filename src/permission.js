@@ -44,7 +44,10 @@ router.beforeEach((to, from, next) => {
       })
     } else {
       const roles = store.getters.roles || []
-      if (!roles.includes('admin') && to.path.indexOf('/ext') !== 0) {
+      const userType = store.getters.userType
+      // 普通用户（01）只能走外部界面；系统用户（00，含审核员）允许进后台
+      const onlyExt = userType ? userType === '01' : !roles.includes('admin')
+      if (onlyExt && to.path.indexOf('/ext') !== 0) {
         next({ path: '/ext/compare' })
         NProgress.done()
         return

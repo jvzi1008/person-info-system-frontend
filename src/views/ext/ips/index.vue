@@ -122,7 +122,8 @@ export default {
       const map = {
         1: '首次登录',
         2: '自助添加',
-        3: '管理员添加'
+        3: '管理员添加',
+        4: '登录IP变更'
       }
       return map[value] || '-'
     },

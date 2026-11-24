@@ -3,7 +3,7 @@
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="76px">
       <el-form-item label="用户" prop="userId">
         <el-select v-model="queryParams.userId" placeholder="全部用户" clearable filterable style="width: 180px">
-          <el-option v-for="item in userOptions" :key="item.userId" :label="item.userName + (item.nickName ? ' / ' + item.nickName : '')" :value="item.userId" />
+          <el-option v-for="item in userOptions" :key="item.userId" :label="(item.nickName || '未命名') + ' / ' + item.userName" :value="item.userId" />
         </el-select>
       </el-form-item>
       <el-form-item label="IP地址" prop="ipAddress">
@@ -85,7 +85,7 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="用户" prop="userId">
           <el-select v-model="form.userId" placeholder="请选择用户" filterable style="width: 100%">
-            <el-option v-for="item in userOptions" :key="item.id" :label="item.loginName + ' / ' + item.userName" :value="item.id" />
+            <el-option v-for="item in userOptions" :key="item.userId" :label="(item.nickName || '未命名') + ' / ' + item.userName" :value="item.userId" />
           </el-select>
         </el-form-item>
         <el-form-item label="IP / CIDR" prop="ipAddress">
@@ -209,10 +209,11 @@ export default {
     },
     userLabel(userId) {
       const user = this.userOptions.find(item => item.userId === userId)
-      return user ? user.userName : userId
+      if (!user) return userId
+      return user.nickName ? user.nickName + ' / ' + user.userName : user.userName
     },
     sourceText(value) {
-      const map = { 1: '首次登录', 2: '自助添加', 3: '管理员添加' }
+      const map = { 1: '首次登录', 2: '自助添加', 3: '管理员添加', 4: '登录IP变更' }
       return map[value] || '-'
     },
     getList() {
